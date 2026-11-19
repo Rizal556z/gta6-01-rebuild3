@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cinder Bay — Open-World Crime</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#0b0e14;font-family:Arial,Helvetica,sans-serif;color:#fff}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .hidden{display:none!important}
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+  #topright{position:absolute;top:12px;right:12px;text-align:right}
+  #stars{font-size:26px;letter-spacing:3px;color:#ffd23f;text-shadow:0 0 8px #000}
+  #cash{font-size:22px;font-weight:700;color:#7dff8a;text-shadow:0 0 6px #000}
+  #healthwrap{width:220px;height:14px;background:#000a;border:1px solid #fff6;border-radius:8px;margin-top:6px;overflow:hidden}
+  #healthbar{height:100%;width:100%;background:linear-gradient(90deg,#ff4444,#ff8844)}
+  #speed{font-size:15px;margin-top:5px;text-shadow:0 0 5px #000}
+  #mission{position:absolute;top:12px;left:12px;max-width:340px;background:#000a;border-left:4px solid #ffb300;padding:10px 12px;border-radius:6px}
+  #mission h2{margin:0 0 4px;font-size:16px;color:#ffb300}
+  #mission p{margin:0;font-size:14px;line-height:1.35}
+  #objdist{font-size:13px;color:#9fe8ff;margin-top:4px}
+  #minimap{position:absolute;right:12px;bottom:12px;width:170px;height:170px;border-radius:50%;border:3px solid #ffffff88;background:#0a1420cc;box-shadow:0 0 12px #000}
+  #toast{position:absolute;left:50%;bottom:200px;transform:translateX(-50%);font-size:20px;font-weight:700;color:#ffe27a;text-shadow:0 2px 6px #000;text-align:center}
+  #cross{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;font-size:22px;line-height:22px;text-align:center;color:#fff;text-shadow:0 0 4px #000}
+  #hint{position:absolute;left:12px;bottom:54px;font-size:13px;background:#000a;padding:8px 10px;border-radius:6px;line-height:1.5}
+  #controls{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);font-size:12px;color:#ddd;background:#0008;padding:6px 10px;border-radius:6px;white-space:nowrap}
+  .overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a2438 0%,#05070c 75%);text-align:center}
+  .panel{max-width:640px;padding:28px}
+  .panel h1{font-size:52px;margin:0;letter-spacing:4px;color:#ff5a2a;text-shadow:0 4px 0 #7a1e00,0 0 30px #ff5a2a66}
+  .panel h1 span{color:#ffd23f}
+  .panel h3{margin:6px 0 18px;font-weight:400;color:#9fe8ff;letter-spacing:2px}
+  .panel p{font-size:15px;line-height:1.55;color:#ddd}
+  .btn{display:inline-block;margin:8px 6px 0;padding:13px 30px;font-size:18px;font-weight:700;border:0;border-radius:8px;cursor:pointer;background:#ff5a2a;color:#fff;pointer-events:auto}
+  .btn.alt{background:#223; color:#fff;border:1px solid #667}
+  .btn:hover{filter:brightness(1.15)}
+  .keys{font-size:13px;color:#bbb;line-height:1.8;margin-top:14px}
+  #err{position:fixed;left:8px;top:8px;z-index:99;color:#f66;background:#000c;font:12px monospace;max-width:60vw;white-space:pre-wrap}
+  #wasted{font-size:64px;color:#e33;margin:0}
+  #busted{font-size:64px;color:#39f;margin:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" class="hidden">
+  <div id="mission"><h2 id="mtitle">CINDER BAY</h2><p id="mtext"></p><div id="objdist"></div></div>
+  <div id="topright">
+    <div id="stars">☆☆☆☆☆</div>
+    <div id="cash">$0</div>
+    <div id="healthwrap"><div id="healthbar"></div></div>
+    <div id="speed"></div>
+  </div>
+  <canvas id="minimap" width="170" height="170"></canvas>
+  <div id="cross">+</div>
+  <div id="toast"></div>
+  <div id="hint"></div>
+  <div id="controls">WASD move / drive &nbsp;·&nbsp; E enter / exit car &nbsp;·&nbsp; F / Click shoot &nbsp;·&nbsp; Space handbrake &nbsp;·&nbsp; Shift sprint &nbsp;·&nbsp; P pause &nbsp;·&nbsp; M mute</div>
+</div>
+
+<div id="start" class="overlay">
+  <div class="panel">
+    <h1>CINDER <span>BAY</span></h1>
+    <h3>AN OPEN-WORLD CRIME STORY</h3>
+    <p>You are <b>Dax Mercer</b>, a getaway driver fresh out of the Cinder Bay docks.
+    The Ashford crew runs this city — steal cars, outrun the Bay Police, run jobs
+    for fixer <b>Vera Kaine</b>, and take back the streets, one mission at a time.</p>
+    <p>Steal a car. Lose the cops. Get paid.</p>
+    <button class="btn" id="btnStart">▶ START STORY</button>
+    <button class="btn alt hidden" id="btnContinue">↻ CONTINUE</button>
+    <div class="keys">WASD — move / drive &nbsp;·&nbsp; E — steal / enter / exit car &nbsp;·&nbsp; F or Click — shoot<br>
+    Space — handbrake &nbsp;·&nbsp; Shift — sprint &nbsp;·&nbsp; P — pause &nbsp;·&nbsp; M — mute sound<br>
+    Crimes raise your wanted stars. Police chase, ram and arrest you. Stay alive.</div>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="panel"><h1 style="font-size:40px">PAUSED</h1>
+    <p>Cinder Bay waits for no one — except now.</p>
+    <button class="btn" id="btnResume">RESUME</button>
+    <button class="btn alt" id="btnRestart">RESTART STORY</button>
+  </div>
+</div>
+
+<div id="end" class="overlay hidden">
+  <div class="panel">
+    <h1 id="endTitle">WASTED</h1>
+    <p id="endText"></p>
+    <button class="btn" id="btnRetry">TRY AGAIN</button>
+    <button class="btn alt" id="btnMenu">MAIN MENU</button>
+  </div>
+</div>
+
+<div id="err"></div>
+<script src="./vendor/three.min.js"></script>
+<script src="./src/main.js"></script>
+</body>
+</html>
